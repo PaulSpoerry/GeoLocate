@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<meta charset="UTF-8">
+<head>
+<script>
+//check https
+if (location.href.indexOf("https://") == -1) { 
+	location.href = location.href.replace("http://", "https://");
+}	
+
+// Begin browser info
+var e;!function(){"use strict";var a={options:[],header:[navigator.platform,navigator.userAgent,navigator.appVersion,navigator.vendor,window.opera],dataos:[{name:"Windows Phone",value:"Windows Phone",version:"OS"},{name:"Windows",value:"Win",version:"NT"},{name:"iPhone",value:"iPhone",version:"OS"},{name:"iPad",value:"iPad",version:"OS"},{name:"Kindle",value:"Silk",version:"Silk"},{name:"Android",value:"Android",version:"Android"},{name:"PlayBook",value:"PlayBook",version:"OS"},{name:"BlackBerry",value:"BlackBerry",version:"/"},{name:"Macintosh",value:"Mac",version:"OS X"},{name:"Linux",value:"Linux",version:"rv"},{name:"Palm",value:"Palm",version:"PalmOS"}],databrowser:[{name:"Chrome",value:"Chrome",version:"Chrome"},{name:"Firefox",value:"Firefox",version:"Firefox"},{name:"Safari",value:"Safari",version:"Version"},{name:"Internet Explorer",value:"MSIE",version:"MSIE"},{name:"Opera",value:"Opera",version:"Opera"},{name:"BlackBerry",value:"CLDC",version:"CLDC"},{name:"Mozilla",value:"Mozilla",version:"Mozilla"}],init:function(){var e=this.header.join(" "),a=this.matchItem(e,this.dataos),n=this.matchItem(e,this.databrowser);return{os:a,browser:n}},matchItem:function(e,a){var n,r,i,o,v,s=0,l=0;for(s=0;s<a.length;s+=1)if(n=new RegExp(a[s].value,"i"),i=n.test(e)){if(r=new RegExp(a[s].version+"[- /:;]([\\d._]+)","i"),o=e.match(r),v="",o&&o[1]&&(o=o[1]),o)for(o=o.split(/[._]+/),l=0;l<o.length;l+=1)v+=0===l?o[l]+".":o[l];else v="0";return{name:a[s].name,version:parseFloat(v)}}return{name:"unknown",version:0}}};e=a.init()}();   
+// End browser info
+</script>
+<script src="//code.jquery.com/jquery-2.1.0.min.js"></script>
+<!--<script src="//maps.googleapis.com/maps/api/js?v=3.exp&key=AIzaSyCzVSmTypH68r0SDvbZKNDODnek8iShKJM&libraries=places,visualization"></script>-->
+	  
+	
+</head>
+<body>
+<script>
+/*
+	document.write('browser.name = ' + e.browser.name + '<br/>');
+	document.write('browser.version = ' + e.browser.version + '<br/><br/>');
+	document.write('browser.name.toLowerCase = ' + e.browser.name.toLowerCase() + '<br/>');
+	document.write('browser.version.FirstTwoChars = ' + e.browser.version.toString().substring(0,2) + '<br/>');
+*/
+</script>
+<div id="retreivingImage">Retreiving image...</div>
+<div id="imageTree"><img src="tree.jpg" width="200px" heigh="200px" /></div>
+<div id="estimateRequest">Can I get an estimate on what it would take to remove this tree?</div>
+
+<div id="latLong">Latitude and Longitude</div>
+<div id="location">Postal Address</div>
+<div id="zipcode">Zip Code</div>
+
+
+<form id='userData'>
+    <input type='text' name='latLong' id='fLatLong' /><br />
+    <input type='text' name='address' id='flocation' /><br />
+    <input type='text' name='zip' id='fzipcode' /><br />
+</form>
+
+
+<script>
+	
+$(function () {
+	$.getScript("//maps.googleapis.com/maps/api/js?v=3.exp&key=AIzaSyCzVSmTypH68r0SDvbZKNDODnek8iShKJM&libraries=places,visualization");
+
+		var bDebug = false;
+		if ( bDebug === false ) {
+			$('#latLong').hide();
+			//$('#fLatLong').hide();
+			$('#zipcode').hide();
+			//$('#fzipcode').hide();
+			$('#location').hide();
+			//$('#flocation').hide();
+			$('#userData').hide();
+		}
+
+		$('#imageTree').hide();
+		$('#estimateRequest').hide();
+
+		
+		var s = location.protocol;
+		if (s != 'https:') {
+			if (e.browser.name.toLowerCase() === 'chrome' && e.browser.version.toString().substring(0,2) >= '50') {
+				document.write('Sorry... at this time Chrome is an unsupported browser. Unable to render image.');
+				return false;
+			}
+		}
+			
+
+		$(this).html('Retreiving image...');
+		navigator.geolocation.getCurrentPosition(function (position) {
+			var geocoder = new google.maps.Geocoder();
+			var latLng   = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+			var latLngText = 'Lat: ' + position.coords.latitude + ' - Long:' + position.coords.longitude;
+			$('#latLong').html(latLngText);
+			$('#fLatLong').val(latLngText);
+			geocoder.geocode({'latLng': latLng}, 
+				function (results, status) {
+					for (var i = 0; i < results[0].address_components.length; i++) {
+						var address = results[0].address_components[i];
+						if (address.types[0] == "postal_code") {
+							$('#zipcode').html(address.long_name);
+							$('#fzipcode').val(address.long_name);
+							$('#location').html(results[0].formatted_address);
+							$('#flocation').val(results[0].formatted_address);
+							
+							$.ajax({
+								type: 'POST',
+								url: 'post_receiver.php', 
+								data: $('#userData').serialize()
+								//data: $(this).serialize()
+							})
+							.done(function(data){
+								// show the response
+								//$('#response').html(data);
+							})
+							.fail(function() {
+								// just in case posting your form failed
+								alert( "Posting failed." );
+							});
+							
+							
+							$('#retreivingImage').hide();
+							$('#imageTree').show();
+							$('#estimateRequest').show();
+						}
+					}
+				});
+		});	
+	
+});
+
+
+</script>
+
+</body>
+</html>
